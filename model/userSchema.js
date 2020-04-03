@@ -8,7 +8,8 @@ const userSchema = new mongoose.Schema({
     wishlist: [{
         candyId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Candy"
+            ref: "Candy",
+            quantity: Number
         }
     }],
     userinfo: [{

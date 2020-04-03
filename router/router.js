@@ -10,6 +10,9 @@ const verifyToken = require("./verifyToken")
 const config = require("../config/config");
 const Candy = require("../model/productSchema");
 const router = express.Router();
+//require dotenv
+//process.end.STRIPE_KEY
+const stripe = require('stripe')('sk_test_oqZuIKbYxB6gPsXq5vzW5mw400fhqJt4oy');
 
 const transport = nodemailer.createTransport(sendGridTransport({
     auth: {
@@ -164,7 +167,7 @@ router.post("/resetpassword/:token", async (req, res) => {
 //Mypage
 router.get("/mypage", verifyToken, async (req, res) => {
     const user = await User.findOne({_id: req.user.user._id});
-    res.render("userprofile/mypage", { token: req.cookies.jsonwebtoken, user, title: "Medlemssida - Lasses Lakrits" });
+    res.render("public/mypage", { token: req.cookies.jsonwebtoken, user, title: "Medlemssida - Lasses Lakrits" });
 });
 
 //Logga ut
@@ -216,5 +219,30 @@ router.route("/checkout")
         const shoppingBag = await Candy.find();
         res.render("checkout.ejs", { token: req.cookies.jsonwebtoken, shoppingBag, title: "Checkout" });
     })
+
+router.route("/order")
+    .get( verifyToken, async (req, res)=>{
+        const user = await User.findOne({ _id: req.user.user._id }).populate("wishlist.candyId");
+        
+        return stripe.checkout.sessions.create({
+            payment_method_types: ["card"],
+            line_items: user.wishlist.map((candy)=>{
+                return {
+                    name: candy.candyId.name,
+                    amount:candy.candyId.price*100,
+                    quantity: 1,
+                    currency: "sek"
+                }
+            }),
+            success_url:req.protocol +   "://" + req.get("Host") +  "/",
+            cancel_url:req.protocol +   "://" + req.get("Host") +  "/allproducts",
+            //":" + process.env.PORT +
+        }).then( (session)=>{
+            console.log(session)
+            res.render("checkout.ejs", {token: req.cookies.jsonwebtoken, user, sessionId:session.id, title: "Checkout"})
+        });
+    
+    })
+
 
 module.exports = router;
