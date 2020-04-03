@@ -167,6 +167,7 @@ router.post("/resetpassword/:token", async (req, res) => {
 //Mypage
 router.get("/mypage", verifyToken, async (req, res) => {
     const user = await User.findOne({_id: req.user.user._id});
+    console.log(req.user.user._id)
     res.render("public/mypage", { token: req.cookies.jsonwebtoken, user, title: "Medlemssida - Lasses Lakrits" });
 });
 
